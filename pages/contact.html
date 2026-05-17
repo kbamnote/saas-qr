@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contact Us - QRForms</title>
+<link rel="stylesheet" href="/css/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<nav class="navbar landing-nav">
+  <a href="/" class="navbar-brand">📋 <span id="brandName">QRForms</span></a>
+  <div class="navbar-nav">
+    <a href="/">Home</a>
+    <a href="/faq">FAQ</a>
+    <a href="/about">About</a>
+    <a href="/login" class="btn btn-ghost btn-sm">Login</a>
+    <a href="/trial-signup" class="btn btn-primary btn-sm">Start Free Trial</a>
+  </div>
+</nav>
+
+<div class="container-sm">
+  <div class="text-center mb-4" style="padding: 40px 0 20px;">
+    <h1 style="font-size: 40px; font-weight: 800; margin-bottom: 12px;">Get in Touch</h1>
+    <p style="color:var(--gray-600); font-size:17px;">We'd love to hear from you. Reach out anytime.</p>
+  </div>
+  
+  <div class="grid grid-2">
+    <div class="card">
+      <div style="font-size:40px; margin-bottom:12px;">📧</div>
+      <h3 style="margin-bottom:8px;">Email Us</h3>
+      <p class="text-muted mb-2">For support, questions, or feedback</p>
+      <a href="#" id="emailLink" style="color:var(--primary); font-weight:600; font-size:16px;">support@qrforms.com</a>
+    </div>
+    
+    <div class="card">
+      <div style="font-size:40px; margin-bottom:12px;">📞</div>
+      <h3 style="margin-bottom:8px;">Call Us</h3>
+      <p class="text-muted mb-2">Working hours: Mon-Sat, 9 AM - 7 PM</p>
+      <a href="#" id="phoneLink" style="color:var(--primary); font-weight:600; font-size:16px;">-</a>
+    </div>
+  </div>
+  
+  <div class="card mt-3">
+    <h3 style="margin-bottom:16px;">📍 Office Address</h3>
+    <p id="addressDisplay" style="color:var(--gray-700); font-size:15px; line-height:1.8;">-</p>
+  </div>
+  
+  <div class="card mt-3">
+    <h3 style="margin-bottom:16px;">Send Us a Message</h3>
+    <p class="text-muted mb-3">Fill the form below and we'll get back to you within 24-48 hours.</p>
+    <div id="alertBox"></div>
+    <form id="contactForm">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Your Name</label>
+          <input type="text" name="name" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" name="email" class="form-control" required>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Subject</label>
+        <input type="text" name="subject" class="form-control" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Message</label>
+        <textarea name="message" class="form-control" rows="5" required></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary btn-lg">Send Message</button>
+    </form>
+  </div>
+  
+  <div class="card mt-3" style="background: var(--primary-50); border: 1px solid var(--primary-100);">
+    <h3 style="margin-bottom:8px;">💡 Quick Help</h3>
+    <p class="text-muted mb-3">Before contacting us, you might find your answer here:</p>
+    <div class="flex gap-2" style="flex-wrap:wrap;">
+      <a href="/faq" class="btn btn-outline btn-sm">📖 FAQ</a>
+      <a href="/terms" class="btn btn-outline btn-sm">📜 Terms</a>
+      <a href="/privacy" class="btn btn-outline btn-sm">🔒 Privacy</a>
+      <a href="/refund" class="btn btn-outline btn-sm">💸 Refund Policy</a>
+    </div>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="footer-content">
+    <div>
+      <div class="logo-text">📋 <span id="footerBrand">QRForms</span></div>
+      <p>Build forms, generate QR codes, collect data effortlessly.</p>
+    </div>
+    <div><h4>Product</h4><ul><li><a href="/#features">Features</a></li><li><a href="/#pricing">Pricing</a></li><li><a href="/faq">FAQ</a></li></ul></div>
+    <div><h4>Company</h4><ul><li><a href="/about">About</a></li><li><a href="/contact">Contact</a></li></ul></div>
+    <div><h4>Legal</h4><ul><li><a href="/terms">Terms</a></li><li><a href="/privacy">Privacy</a></li><li><a href="/refund">Refund</a></li></ul></div>
+  </div>
+  <div class="footer-bottom"><p>© <span id="copyYear"></span> <span id="footerLegal">QRForms</span>. All rights reserved.</p></div>
+</footer>
+
+<script>
+document.getElementById('copyYear').textContent = new Date().getFullYear();
+
+let supportEmail = '';
+fetch('/api/settings/public').then(r => r.json()).then(d => {
+  if (d.success) {
+    const s = d.settings;
+    ['brandName', 'footerBrand'].forEach(id => document.getElementById(id).textContent = s.siteName);
+    document.getElementById('footerLegal').textContent = s.companyLegalName || s.siteName;
+    supportEmail = s.supportEmail;
+    const emailLink = document.getElementById('emailLink');
+    emailLink.textContent = s.supportEmail || '-';
+    if (s.supportEmail) emailLink.href = 'mailto:' + s.supportEmail;
+    const phoneLink = document.getElementById('phoneLink');
+    phoneLink.textContent = s.supportPhone || '-';
+    if (s.supportPhone) phoneLink.href = 'tel:' + s.supportPhone;
+    document.getElementById('addressDisplay').textContent = s.companyAddress || '-';
+  }
+}).catch(() => {});
+
+document.getElementById('contactForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  // Open mailto link (simple, no backend mail sending needed)
+  const subject = encodeURIComponent(`[Contact] ${fd.get('subject')}`);
+  const body = encodeURIComponent(`Name: ${fd.get('name')}\nEmail: ${fd.get('email')}\n\nMessage:\n${fd.get('message')}`);
+  window.location.href = `mailto:${supportEmail}?subject=${subject}&body=${body}`;
+  
+  const alertBox = document.getElementById('alertBox');
+  alertBox.innerHTML = '<div class="alert alert-success">Opening your email client... If it doesn\'t open, please email us directly at ' + supportEmail + '</div>';
+});
+</script>
+
+</body>
+</html>

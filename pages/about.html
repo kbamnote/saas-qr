@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>About Us - QRForms</title>
+<link rel="stylesheet" href="/css/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<nav class="navbar landing-nav">
+  <a href="/" class="navbar-brand">📋 <span id="brandName">QRForms</span></a>
+  <div class="navbar-nav">
+    <a href="/">Home</a>
+    <a href="/faq">FAQ</a>
+    <a href="/contact">Contact</a>
+    <a href="/login" class="btn btn-ghost btn-sm">Login</a>
+    <a href="/trial-signup" class="btn btn-primary btn-sm">Start Free Trial</a>
+  </div>
+</nav>
+
+<div class="legal-content">
+  <h1>About <span id="aboutBrand">QRForms</span></h1>
+  <p class="updated">Building tools that make data collection effortless</p>
+  
+  <h2>Our Mission</h2>
+  <p>We believe collecting customer data shouldn't require expensive software, complex setup, or technical skills. Our mission is to give every business — from a single shop owner to a large enterprise — a simple, beautiful way to collect responses through QR codes.</p>
+  
+  <h2>What We Do</h2>
+  <p>Our platform lets you:</p>
+  <ul>
+    <li>Build custom forms with any fields you need</li>
+    <li>Generate branded QR codes that work on any phone</li>
+    <li>Collect responses automatically into a clean dashboard</li>
+    <li>Export everything to Excel with one click</li>
+    <li>Create different QR codes for different events or campaigns</li>
+  </ul>
+  
+  <h2>Who We Serve</h2>
+  <p>Businesses across India trust us for:</p>
+  <ul>
+    <li><strong>Restaurants & Cafes</strong> — collecting customer feedback at tables</li>
+    <li><strong>Retail Stores</strong> — gathering customer details for loyalty programs</li>
+    <li><strong>Event Organizers</strong> — managing registrations and feedback</li>
+    <li><strong>Educational Institutions</strong> — student information collection</li>
+    <li><strong>Healthcare Clinics</strong> — patient intake forms</li>
+    <li><strong>Service Providers</strong> — appointment requests and inquiries</li>
+  </ul>
+  
+  <h2>Why Choose Us</h2>
+  <ul>
+    <li><strong>Made in India:</strong> Built specifically for Indian businesses with INR pricing and Razorpay integration</li>
+    <li><strong>No Technical Skills Needed:</strong> If you can use WhatsApp, you can use our platform</li>
+    <li><strong>Affordable:</strong> Transparent pricing with no hidden fees</li>
+    <li><strong>Secure:</strong> Your data is encrypted and stored safely</li>
+    <li><strong>Multilingual:</strong> Available in English, Hindi, and Marathi</li>
+  </ul>
+  
+  <h2>Get in Touch</h2>
+  <p>We'd love to hear from you. Whether you have questions, feedback, or a partnership idea — reach out anytime.</p>
+  <p>
+    <strong>Email:</strong> <span id="contactEmail">support@qrforms.com</span><br>
+    <strong>Phone:</strong> <span id="contactPhone">-</span><br>
+    <strong>Address:</strong> <span id="contactAddress">-</span>
+  </p>
+  
+  <div style="text-align:center; margin-top: 40px;">
+    <a href="/trial-signup" class="btn btn-primary btn-lg">Start Your Free Trial</a>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="footer-content">
+    <div>
+      <div class="logo-text">📋 <span id="footerBrand">QRForms</span></div>
+      <p>Build forms, generate QR codes, collect data effortlessly.</p>
+    </div>
+    <div>
+      <h4>Product</h4>
+      <ul><li><a href="/#features">Features</a></li><li><a href="/#pricing">Pricing</a></li><li><a href="/faq">FAQ</a></li></ul>
+    </div>
+    <div>
+      <h4>Company</h4>
+      <ul><li><a href="/about">About</a></li><li><a href="/contact">Contact</a></li></ul>
+    </div>
+    <div>
+      <h4>Legal</h4>
+      <ul><li><a href="/terms">Terms</a></li><li><a href="/privacy">Privacy</a></li><li><a href="/refund">Refund</a></li></ul>
+    </div>
+  </div>
+  <div class="footer-bottom"><p>© <span id="copyYear"></span> <span id="footerLegal">QRForms</span>. All rights reserved.</p></div>
+</footer>
+
+<script>
+document.getElementById('copyYear').textContent = new Date().getFullYear();
+fetch('/api/settings/public').then(r => r.json()).then(d => {
+  if (d.success) {
+    const s = d.settings;
+    ['brandName', 'footerBrand', 'aboutBrand'].forEach(id => document.getElementById(id).textContent = s.siteName);
+    document.getElementById('footerLegal').textContent = s.companyLegalName || s.siteName;
+    document.getElementById('contactEmail').textContent = s.supportEmail || '-';
+    document.getElementById('contactPhone').textContent = s.supportPhone || '-';
+    document.getElementById('contactAddress').textContent = s.companyAddress || '-';
+  }
+}).catch(() => {});
+</script>
+
+</body>
+</html>

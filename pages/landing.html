@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QRForms — Collect Customer Data with a QR Scan</title>
+<meta name="description" content="Build forms, generate QR codes, and collect responses into Excel — all from one beautiful dashboard. 7-day free trial.">
+<link rel="stylesheet" href="/css/style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* Page-specific micro-animations */
+.fade-in { opacity: 0; transform: translateY(20px); animation: fadeUp 0.8s forwards; }
+.fade-in.d1 { animation-delay: 0.1s; }
+.fade-in.d2 { animation-delay: 0.2s; }
+.fade-in.d3 { animation-delay: 0.3s; }
+@keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
+
+.scroll-reveal { opacity: 0; transform: translateY(30px); transition: all 0.7s; }
+.scroll-reveal.visible { opacity: 1; transform: translateY(0); }
+
+/* Demo video / illustration */
+.demo-section { background: var(--gray-900); color: white; padding: 80px 24px; }
+.demo-section h2 { color: white; }
+.demo-section .section-subtitle { color: var(--gray-300); }
+.demo-frame {
+  max-width: 1000px; margin: 0 auto; border-radius: var(--radius-lg);
+  overflow: hidden; box-shadow: 0 50px 100px -20px rgba(0,0,0,0.5);
+  background: white; padding: 8px;
+  position: relative;
+}
+.demo-frame::before {
+  content: ''; position: absolute; inset: -2px; border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, var(--primary), #ec4899, var(--accent));
+  z-index: -1; filter: blur(20px); opacity: 0.5;
+}
+.demo-mockup {
+  background: var(--gray-50); border-radius: var(--radius);
+  aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center;
+  position: relative; overflow: hidden;
+}
+
+/* Testimonials */
+.testimonial-card {
+  background: white; padding: 28px; border-radius: var(--radius-lg);
+  border: 1px solid var(--gray-100); box-shadow: var(--shadow);
+}
+.testimonial-stars { color: #f59e0b; margin-bottom: 12px; }
+.testimonial-text { color: var(--gray-700); font-size: 15px; line-height: 1.7; margin-bottom: 20px; }
+.testimonial-author { display: flex; align-items: center; gap: 12px; }
+.testimonial-avatar { 
+  width: 44px; height: 44px; border-radius: 50%; 
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  color: white; display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 16px;
+}
+.testimonial-name { font-weight: 600; color: var(--gray-900); }
+.testimonial-role { font-size: 13px; color: var(--gray-500); }
+
+/* CTA section */
+.cta-section { 
+  padding: 80px 24px;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: white; text-align: center;
+  position: relative; overflow: hidden;
+}
+.cta-section::before {
+  content: ''; position: absolute; inset: 0;
+  background-image: radial-gradient(circle at 20% 30%, rgba(255,255,255,0.1), transparent 40%),
+                    radial-gradient(circle at 80% 70%, rgba(255,255,255,0.08), transparent 40%);
+}
+.cta-section .container { position: relative; z-index: 2; }
+.cta-section h2 { font-size: clamp(28px, 4vw, 44px); margin-bottom: 16px; font-weight: 800; }
+.cta-section p { font-size: 18px; opacity: 0.95; margin-bottom: 32px; max-width: 600px; margin-left: auto; margin-right: auto; }
+
+/* Stats strip */
+.stats-strip {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 32px; max-width: 900px; margin: 0 auto;
+  padding: 40px 0;
+}
+.stats-strip .stat-item { text-align: center; }
+.stats-strip .stat-num { font-size: 40px; font-weight: 800; color: var(--gray-900); }
+.stats-strip .stat-label { color: var(--gray-500); font-size: 14px; font-weight: 500; margin-top: 4px; }
+@media (max-width: 640px) { .stats-strip { grid-template-columns: repeat(2, 1fr); gap: 24px; } .stats-strip .stat-num { font-size: 30px; } }
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar landing-nav">
+  <a href="/" class="navbar-brand">
+    <span id="brandLogo">📋</span>
+    <span id="brandName">QRForms</span>
+  </a>
+  <button class="mobile-menu-btn" onclick="document.querySelector('.navbar-nav').classList.toggle('open')">☰</button>
+  <div class="navbar-nav">
+    <a href="#features" data-i18n="nav.features">Features</a>
+    <a href="#pricing" data-i18n="nav.pricing">Pricing</a>
+    <a href="/faq" data-i18n="nav.faq">FAQ</a>
+    <a href="/about" data-i18n="nav.about">About</a>
+    
+    <div class="lang-switcher">
+      <button class="lang-btn" onclick="document.getElementById('langMenu').classList.toggle('open')">
+        🌐 <span id="currentLang">EN</span> ▾
+      </button>
+      <div class="lang-menu" id="langMenu">
+        <button onclick="switchLang('en')" class="lang-opt" data-lang="en">🇬🇧 English</button>
+        <button onclick="switchLang('hi')" class="lang-opt" data-lang="hi">🇮🇳 हिन्दी</button>
+        <button onclick="switchLang('mr')" class="lang-opt" data-lang="mr">🇮🇳 मराठी</button>
+      </div>
+    </div>
+    
+    <a href="/login" class="btn btn-ghost btn-sm" data-i18n="nav.login">Login</a>
+    <a href="/trial-signup" class="btn btn-primary btn-sm" data-i18n="nav.signup">Start Free Trial</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-badge fade-in" data-i18n="hero.badge">✨ 7-Day Free Trial • No Card Required</div>
+    <h1 class="fade-in d1">
+      <span data-i18n="hero.title1">Collect Customer Data</span><br>
+      <span class="gradient-text" data-i18n="hero.title2">with One QR Scan</span>
+    </h1>
+    <p class="subtitle fade-in d2" data-i18n="hero.subtitle">Build forms, generate QR codes, and gather responses into Excel — all from one beautiful dashboard.</p>
+    <div class="hero-cta fade-in d3">
+      <a href="/trial-signup" class="btn btn-primary btn-xl" data-i18n="hero.cta.trial">Start Free Trial</a>
+      <a href="#how-it-works" class="btn btn-outline btn-xl" data-i18n="hero.cta.demo">See How It Works</a>
+    </div>
+    <p class="hero-note fade-in d3" data-i18n="hero.note">No credit card • Cancel anytime • Full access for 7 days</p>
+    
+    <!-- Floating QR Illustration -->
+    <div class="hero-visual fade-in d3" id="heroVisual">
+      <!-- QR illustrations are added dynamically -->
+    </div>
+  </div>
+</section>
+
+<!-- STATS STRIP -->
+<section style="background:white; border-top:1px solid var(--gray-100); border-bottom:1px solid var(--gray-100);">
+  <div class="stats-strip">
+    <div class="stat-item"><div class="stat-num">10K+</div><div class="stat-label">Forms Created</div></div>
+    <div class="stat-item"><div class="stat-num">500K+</div><div class="stat-label">QR Scans</div></div>
+    <div class="stat-item"><div class="stat-num">99.9%</div><div class="stat-label">Uptime</div></div>
+    <div class="stat-item"><div class="stat-num">4.8★</div><div class="stat-label">User Rating</div></div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="section" id="features" style="background:var(--gray-50);">
+  <div class="container">
+    <div class="section-header scroll-reveal">
+      <div class="section-eyebrow" data-i18n="features.subtitle">Powerful features, beautifully simple</div>
+      <h2 class="section-title" data-i18n="features.title">Everything You Need to Collect Data</h2>
+    </div>
+    <div class="grid grid-3">
+      <div class="feature-card scroll-reveal">
+        <div class="feature-icon">📝</div>
+        <h3 data-i18n="features.1.title">Custom Form Builder</h3>
+        <p data-i18n="features.1.desc">Build forms with any fields — text, dropdowns, checkboxes, dates. No coding required.</p>
+      </div>
+      <div class="feature-card scroll-reveal">
+        <div class="feature-icon">🎨</div>
+        <h3 data-i18n="features.2.title">Branded QR Codes</h3>
+        <p data-i18n="features.2.desc">Each form gets a unique QR code. Add your logo, brand colors, and company info.</p>
+      </div>
+      <div class="feature-card scroll-reveal">
+        <div class="feature-icon">📊</div>
+        <h3 data-i18n="features.3.title">Excel Auto-Export</h3>
+        <p data-i18n="features.3.desc">All submissions flow into your dashboard. Download as Excel anytime, organized perfectly.</p>
+      </div>
+      <div class="feature-card scroll-reveal">
+        <div class="feature-icon">🎯</div>
+        <h3 data-i18n="features.4.title">Event-Based Forms</h3>
+        <p data-i18n="features.4.desc">Create separate QR codes for different events, campaigns, or branches.</p>
+      </div>
+      <div class="feature-card scroll-reveal">
+        <div class="feature-icon">⚡</div>
+        <h3 data-i18n="features.5.title">Real-Time Dashboard</h3>
+        <p data-i18n="features.5.desc">See submissions as they come in. Track response counts and engagement.</p>
+      </div>
+      <div class="feature-card scroll-reveal">
+        <div class="feature-icon">🔒</div>
+        <h3 data-i18n="features.6.title">Secure & Private</h3>
+        <p data-i18n="features.6.desc">Bank-grade encryption. Your data stays yours. GDPR-ready.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="section" id="how-it-works">
+  <div class="container">
+    <div class="section-header scroll-reveal">
+      <h2 class="section-title" data-i18n="how.title">How It Works</h2>
+      <p class="section-subtitle">From signup to first response in under 5 minutes.</p>
+    </div>
+    <div class="grid grid-4">
+      <div class="step-card scroll-reveal">
+        <div class="step-number">1</div>
+        <h3 data-i18n="how.1.title">Sign Up Free</h3>
+        <p class="text-muted" data-i18n="how.1.desc">Create your account in 30 seconds. No card needed.</p>
+      </div>
+      <div class="step-card scroll-reveal">
+        <div class="step-number">2</div>
+        <h3 data-i18n="how.2.title">Build Your Form</h3>
+        <p class="text-muted" data-i18n="how.2.desc">Add fields, your company logo, and contact info.</p>
+      </div>
+      <div class="step-card scroll-reveal">
+        <div class="step-number">3</div>
+        <h3 data-i18n="how.3.title">Generate QR</h3>
+        <p class="text-muted" data-i18n="how.3.desc">Get a unique QR code. Print it or share digitally.</p>
+      </div>
+      <div class="step-card scroll-reveal">
+        <div class="step-number">4</div>
+        <h3 data-i18n="how.4.title">Collect Responses</h3>
+        <p class="text-muted" data-i18n="how.4.desc">Customers scan & fill. You get data in Excel.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="section" id="pricing" style="background:var(--gray-50);">
+  <div class="container">
+    <div class="section-header scroll-reveal">
+      <h2 class="section-title" data-i18n="pricing.title">Simple, Transparent Pricing</h2>
+      <p class="section-subtitle" data-i18n="pricing.subtitle">No hidden fees. Cancel anytime.</p>
+    </div>
+    <div class="grid grid-3" style="max-width:1000px; margin: 0 auto;">
+      <div class="pricing-card scroll-reveal">
+        <div class="pricing-name" data-i18n="pricing.trial.title">Free Trial</div>
+        <div class="pricing-price">
+          <span class="pricing-amount">₹0</span>
+          <span class="pricing-period" data-i18n="pricing.trial.period">/ 7 days</span>
+        </div>
+        <ul class="pricing-features" id="trialFeatures">
+          <li>1 QR code</li>
+          <li>10 form submissions</li>
+          <li>Full dashboard access</li>
+          <li>Excel download</li>
+          <li>Email support</li>
+        </ul>
+        <a href="/trial-signup" class="btn btn-outline btn-block" data-i18n="pricing.trial.cta">Start Free Trial</a>
+      </div>
+      
+      <div class="pricing-card featured scroll-reveal">
+        <span class="pricing-badge" data-i18n="pricing.pro.badge">MOST POPULAR</span>
+        <div class="pricing-name" data-i18n="pricing.pro.title">Pro Plan</div>
+        <div class="pricing-price">
+          <span class="pricing-amount" id="subPriceDisplay">₹499</span>
+          <span class="pricing-period" data-i18n="pricing.pro.period">/ year</span>
+        </div>
+        <ul class="pricing-features">
+          <li>Unlimited submissions</li>
+          <li>Full dashboard access</li>
+          <li>Branded QR codes</li>
+          <li>Excel downloads</li>
+          <li>Priority support</li>
+          <li>All features unlocked</li>
+        </ul>
+        <a href="/trial-signup" class="btn btn-primary btn-block" data-i18n="pricing.pro.cta">Start Free Trial</a>
+        <p class="text-sm text-muted text-center mt-2" data-i18n="pricing.pro.note">+ QR generation charge applies separately</p>
+      </div>
+      
+      <div class="pricing-card scroll-reveal">
+        <div class="pricing-name" data-i18n="pricing.qr.title">Per QR Code</div>
+        <div class="pricing-price">
+          <span class="pricing-amount" id="qrPriceDisplay">₹399</span>
+          <span class="pricing-period" data-i18n="pricing.qr.period">/ QR</span>
+        </div>
+        <ul class="pricing-features">
+          <li>One QR generation</li>
+          <li>Custom branding</li>
+          <li>Unlimited submissions</li>
+          <li>Lifetime access</li>
+          <li>Excel export</li>
+        </ul>
+        <a href="/trial-signup" class="btn btn-outline btn-block">Get Started</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="section">
+  <div class="container">
+    <div class="section-header scroll-reveal">
+      <h2 class="section-title">Loved by Businesses Across India</h2>
+    </div>
+    <div class="grid grid-3">
+      <div class="testimonial-card scroll-reveal">
+        <div class="testimonial-stars">★★★★★</div>
+        <p class="testimonial-text">"Game changer for our restaurant. Customers scan and give feedback instantly. We download Excel every Monday."</p>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar">RK</div>
+          <div>
+            <div class="testimonial-name">Rajesh Kumar</div>
+            <div class="testimonial-role">Restaurant Owner, Pune</div>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial-card scroll-reveal">
+        <div class="testimonial-stars">★★★★★</div>
+        <p class="testimonial-text">"Used it for an event with 200 attendees. QR worked perfectly. All registration data in Excel — saved us hours."</p>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar">PS</div>
+          <div>
+            <div class="testimonial-name">Priya Sharma</div>
+            <div class="testimonial-role">Event Manager, Mumbai</div>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial-card scroll-reveal">
+        <div class="testimonial-stars">★★★★★</div>
+        <p class="testimonial-text">"My retail store uses different QR for each branch. Excel reports help me track which branch gets more queries."</p>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar">AM</div>
+          <div>
+            <div class="testimonial-name">Anand Mehta</div>
+            <div class="testimonial-role">Retail Chain, Bangalore</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <div class="container">
+    <h2>Ready to Get Started?</h2>
+    <p>Join thousands of businesses collecting data smarter. Start your 7-day free trial — no credit card required.</p>
+    <a href="/trial-signup" class="btn btn-xl" style="background:white; color:var(--primary);" data-i18n="hero.cta.trial">Start Free Trial</a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-content">
+    <div>
+      <div class="logo-text">📋 <span id="footerBrand">QRForms</span></div>
+      <p style="margin-bottom: 12px;">Build forms, generate QR codes, and collect customer data effortlessly.</p>
+      <p id="footerEmail">📧 support@qrforms.com</p>
+      <p id="footerPhone"></p>
+    </div>
+    <div>
+      <h4 data-i18n="footer.product">Product</h4>
+      <ul>
+        <li><a href="#features" data-i18n="nav.features">Features</a></li>
+        <li><a href="#pricing" data-i18n="nav.pricing">Pricing</a></li>
+        <li><a href="/faq" data-i18n="nav.faq">FAQ</a></li>
+        <li><a href="/trial-signup">Free Trial</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4 data-i18n="footer.company">Company</h4>
+      <ul>
+        <li><a href="/about" data-i18n="nav.about">About Us</a></li>
+        <li><a href="/contact" data-i18n="nav.contact">Contact</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4 data-i18n="footer.legal">Legal</h4>
+      <ul>
+        <li><a href="/terms">Terms & Conditions</a></li>
+        <li><a href="/privacy">Privacy Policy</a></li>
+        <li><a href="/refund">Refund Policy</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>© <span id="copyYear"></span> <span id="footerLegalName">QRForms Pvt Ltd</span>. <span data-i18n="footer.rights">All rights reserved.</span></p>
+  </div>
+</footer>
+
+<script src="/js/i18n.js"></script>
+<script>
+document.getElementById('copyYear').textContent = new Date().getFullYear();
+
+// Load site settings (logo, name, pricing)
+fetch('/api/settings/public').then(r => r.json()).then(d => {
+  if (d.success) {
+    const s = d.settings;
+    document.getElementById('brandName').textContent = s.siteName;
+    document.getElementById('footerBrand').textContent = s.siteName;
+    document.getElementById('footerLegalName').textContent = s.companyLegalName || s.siteName;
+    document.getElementById('footerEmail').textContent = '📧 ' + s.supportEmail;
+    if (s.supportPhone) document.getElementById('footerPhone').textContent = '📞 ' + s.supportPhone;
+    document.getElementById('subPriceDisplay').textContent = '₹' + s.subscriptionPrice;
+    document.getElementById('qrPriceDisplay').textContent = '₹' + s.qrPrice;
+    
+    // Update trial features based on settings
+    document.getElementById('trialFeatures').innerHTML = `
+      <li>${s.trialQrLimit} QR code${s.trialQrLimit > 1 ? 's' : ''}</li>
+      <li>${s.trialSubmissions} form submissions</li>
+      <li>Full dashboard access</li>
+      <li>Excel download</li>
+      <li>Email support</li>
+    `;
+    
+    if (s.siteLogoUrl) {
+      document.getElementById('brandLogo').innerHTML = `<img src="${s.siteLogoUrl}" alt="logo">`;
+    }
+  }
+}).catch(() => {});
+
+// Language switcher
+function switchLang(lang) {
+  window.i18n.setLang(lang);
+  document.getElementById('currentLang').textContent = lang.toUpperCase();
+  document.getElementById('langMenu').classList.remove('open');
+  document.querySelectorAll('.lang-opt').forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
+}
+document.getElementById('currentLang').textContent = (window.i18n.current || 'en').toUpperCase();
+document.querySelectorAll('.lang-opt').forEach(b => b.classList.toggle('active', b.dataset.lang === window.i18n.current));
+
+// Close lang menu on outside click
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.lang-switcher')) document.getElementById('langMenu').classList.remove('open');
+});
+
+// Scroll reveal
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.1 });
+document.querySelectorAll('.scroll-reveal').forEach(el => observer.observe(el));
+
+// Generate floating QR illustrations
+function generateQRSVG(text, size = 140) {
+  // Simple QR-like pattern for decoration
+  let cells = '';
+  const grid = 21;
+  const cellSize = size / grid;
+  // Seed based on text length for some variation
+  const seed = text.length * 17;
+  for (let y = 0; y < grid; y++) {
+    for (let x = 0; x < grid; x++) {
+      // Corner finders
+      const inFinder = (x < 7 && y < 7) || (x >= grid-7 && y < 7) || (x < 7 && y >= grid-7);
+      let fill = false;
+      if (inFinder) {
+        // Standard QR finder pattern
+        const fx = x < 7 ? x : (x >= grid-7 ? x - (grid-7) : -1);
+        const fy = y < 7 ? y : (y >= grid-7 ? y - (grid-7) : -1);
+        if (fx >= 0 && fy >= 0) {
+          const onBorder = fx === 0 || fx === 6 || fy === 0 || fy === 6;
+          const center = fx >= 2 && fx <= 4 && fy >= 2 && fy <= 4;
+          fill = onBorder || center;
+        }
+      } else {
+        fill = ((x * 7 + y * 13 + seed) % 3) === 0;
+      }
+      if (fill) {
+        cells += `<rect x="${x*cellSize}" y="${y*cellSize}" width="${cellSize}" height="${cellSize}" fill="#0f172a"/>`;
+      }
+    }
+  }
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="100%" height="100%">${cells}</svg>`;
+}
+
+document.getElementById('heroVisual').innerHTML = `
+  <div class="qr-float q1">${generateQRSVG('a', 112)}</div>
+  <div class="qr-float q2">${generateQRSVG('main', 152)}</div>
+  <div class="qr-float q3">${generateQRSVG('three', 112)}</div>
+`;
+</script>
+
+</body>
+</html>

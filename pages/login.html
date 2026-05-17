@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login - QRForms</title>
+<link rel="stylesheet" href="/css/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="auth-wrapper">
+  <div class="auth-card">
+    <div class="flex-between mb-3">
+      <a href="/" style="text-decoration:none; font-weight:800; color:var(--primary); font-size:20px;">📋 <span id="brandName">QRForms</span></a>
+      <div class="lang-switcher">
+        <button class="lang-btn" onclick="document.getElementById('langMenu').classList.toggle('open')">
+          🌐 <span id="currentLang">EN</span> ▾
+        </button>
+        <div class="lang-menu" id="langMenu">
+          <button onclick="switchLang('en')" class="lang-opt" data-lang="en">🇬🇧 English</button>
+          <button onclick="switchLang('hi')" class="lang-opt" data-lang="hi">🇮🇳 हिन्दी</button>
+          <button onclick="switchLang('mr')" class="lang-opt" data-lang="mr">🇮🇳 मराठी</button>
+        </div>
+      </div>
+    </div>
+    <h2>Welcome Back</h2>
+    <p class="subtitle">Sign in to access your dashboard</p>
+    <div id="alertBox"></div>
+    <form id="loginForm">
+      <div class="form-group">
+        <label class="form-label" data-i18n="form.email">Email</label>
+        <input type="email" name="email" class="form-control" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label" data-i18n="form.password">Password</label>
+        <input type="password" name="password" class="form-control" required>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block btn-lg" id="submitBtn" data-i18n="form.signIn">Sign In</button>
+    </form>
+    <div class="alt-link">No account? <a href="/trial-signup" data-i18n="nav.signup">Start Free Trial</a></div>
+  </div>
+</div>
+
+<script src="/js/i18n.js"></script>
+<script src="/js/common.js"></script>
+<script>
+function switchLang(lang) {
+  window.i18n.setLang(lang);
+  document.getElementById('currentLang').textContent = lang.toUpperCase();
+  document.getElementById('langMenu').classList.remove('open');
+}
+document.getElementById('currentLang').textContent = (window.i18n.current || 'en').toUpperCase();
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.lang-switcher')) document.getElementById('langMenu').classList.remove('open');
+});
+
+fetch('/api/settings/public').then(r => r.json()).then(d => {
+  if (d.success) document.getElementById('brandName').textContent = d.settings.siteName;
+}).catch(() => {});
+
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="loader"></span>';
+  const fd = new FormData(e.target);
+  const res = await apiCall('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ email: fd.get('email'), password: fd.get('password') })
+  });
+  btn.disabled = false; btn.textContent = window.i18n.t('form.signIn');
+  if (res.success) {
+    setAuth(res.token, res.user);
+    window.location.href = res.user.role === 'superadmin' ? '/admin' : '/dashboard';
+  } else {
+    showAlert(res.message, 'danger');
+  }
+});
+</script>
+</body>
+</html>

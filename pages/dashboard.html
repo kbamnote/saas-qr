@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard - QRForms</title>
+<link rel="stylesheet" href="/css/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="/dashboard" class="navbar-brand">📋 <span id="brandName">QRForms</span></a>
+  <button class="mobile-menu-btn" onclick="document.querySelector('.navbar-nav').classList.toggle('open')">☰</button>
+  <div class="navbar-nav">
+    <span id="userNameDisplay" style="font-weight:600; color:var(--gray-700);"></span>
+    <div class="lang-switcher">
+      <button class="lang-btn" onclick="document.getElementById('langMenu').classList.toggle('open')">
+        🌐 <span id="currentLang">EN</span>
+      </button>
+      <div class="lang-menu" id="langMenu">
+        <button onclick="switchLang('en')" class="lang-opt" data-lang="en">🇬🇧 English</button>
+        <button onclick="switchLang('hi')" class="lang-opt" data-lang="hi">🇮🇳 हिन्दी</button>
+        <button onclick="switchLang('mr')" class="lang-opt" data-lang="mr">🇮🇳 मराठी</button>
+      </div>
+    </div>
+    <a href="#" onclick="logout(); return false;" data-i18n="nav.logout">Logout</a>
+  </div>
+</nav>
+
+<div class="app-layout">
+  <aside class="sidebar">
+    <a href="#" class="nav-link active" data-view="overview">📊 Overview</a>
+    <a href="#" class="nav-link" data-view="forms">📝 My Forms</a>
+    <a href="#" class="nav-link" data-view="create">➕ Create Form</a>
+    <a href="#" class="nav-link" data-view="billing">💳 Billing</a>
+    <a href="#" class="nav-link" data-view="profile">👤 Profile</a>
+  </aside>
+  
+  <main class="main-content">
+    <div id="alertBox"></div>
+    <div id="content"></div>
+  </main>
+</div>
+
+<!-- Upgrade modal -->
+<div class="modal-backdrop" id="upgradeModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title" id="upgradeTitle">Upgrade to Continue</h3>
+      <button class="modal-close" onclick="document.getElementById('upgradeModal').classList.remove('active')">×</button>
+    </div>
+    <div id="upgradeBody"></div>
+  </div>
+</div>
+
+<script src="/js/i18n.js"></script>
+<script src="/js/common.js"></script>
+<script>
+let currentUser = requireAuth();
+let pricing = {};
+let siteSettings = {};
+
+function switchLang(lang) {
+  window.i18n.setLang(lang);
+  document.getElementById('currentLang').textContent = lang.toUpperCase();
+  document.getElementById('langMenu').classList.remove('open');
+  apiCall('/auth/language', { method: 'PUT', body: JSON.stringify({ language: lang }) });
+}
+document.getElementById('currentLang').textContent = (window.i18n.current || 'en').toUpperCase();
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.lang-switcher')) document.getElementById('langMenu').classList.remove('open');
+});
+
+async function loadInitData() {
+  const [s, p] = await Promise.all([
+    fetch('/api/settings/public').then(r => r.json()),
+    apiCall('/payments/pricing')
+  ]);
+  if (s.success) {
+    siteSettings = s.settings;
+    document.getElementById('brandName').textContent = s.settings.siteName;
+  }
+  pricing = p;
+}
+
+async function refreshUser() {
+  const r = await apiCall('/auth/me');
+  if (r.success) {
+    currentUser = r.user;
+    localStorage.setItem('user', JSON.stringify(r.user));
+    document.getElementById('userNameDisplay').textContent = r.user.name;
+  }
+}
+
+function showUpgradeModal(reason) {
+  const isTrialExpired = !currentUser.hasTrial && !currentUser.hasSubscription;
+  const isQrLimit = currentUser.trial?.isOnTrial && currentUser.trial?.qrUsed >= currentUser.trial?.qrLimit;
+  
+  let html = '';
+  
+  if (isQrLimit) {
+    html = `
+      <p style="margin-bottom:16px;">You've used your trial QR. To create more forms, you need an active subscription + QR credits.</p>
+      <div class="card" style="background:var(--gray-50); margin-bottom:0;">
+        <h4 style="margin-bottom:8px;">Step 1: Activate Pro Plan</h4>
+        <div style="font-size:24px; font-weight:800; color:var(--primary);">₹${pricing.subscriptionPrice}/year</div>
+        <p class="text-sm text-muted">Unlimited data access</p>
+      </div>
+      <div class="card" style="background:var(--gray-50); margin-top:12px;">
+        <h4 style="margin-bottom:8px;">Step 2: Buy QR Credits</h4>
+        <div style="font-size:24px; font-weight:800; color:var(--primary);">₹${pricing.qrPrice}/QR</div>
+        <p class="text-sm text-muted">Each QR = 1 form (unlimited submissions)</p>
+      </div>
+      <div class="form-group mt-3">
+        <label class="form-label">Coupon code (optional)</label>
+        <input type="text" id="upgradeCoupon" class="form-control">
+      </div>
+      <button class="btn btn-primary btn-block btn-lg mt-3" onclick="paySubscription()">Activate Pro Plan</button>
+    `;
+  } else if (isTrialExpired) {
+    html = `
+      <p style="margin-bottom:16px;">${reason || 'Your trial has ended. Subscribe to continue using all features.'}</p>
+      <div class="card" style="background:var(--gray-50);">
+        <h4>Pro Plan</h4>
+        <div style="font-size:32px; font-weight:800; color:var(--primary); margin: 8px 0;">₹${pricing.subscriptionPrice}/year</div>
+        <p class="text-sm text-muted">Full dashboard access, Excel downloads, unlimited submissions</p>
+      </div>
+      <div class="form-group mt-3">
+        <label class="form-label">Coupon code (optional)</label>
+        <input type="text" id="upgradeCoupon" class="form-control">
+      </div>
+      <button class="btn btn-primary btn-block btn-lg mt-3" onclick="paySubscription()">Subscribe Now</button>
+    `;
+  } else {
+    // No QR credits but subscription is active
+    html = `
+      <p style="margin-bottom:16px;">You need a QR credit to create a new form.</p>
+      <div class="card" style="background:var(--gray-50);">
+        <div style="font-size:32px; font-weight:800; color:var(--primary);">₹${pricing.qrPrice}/QR</div>
+        <p class="text-sm text-muted">One-time charge per QR. Each QR collects unlimited submissions for life.</p>
+      </div>
+      <div class="form-group mt-3">
+        <label class="form-label">Coupon code (optional)</label>
+        <input type="text" id="upgradeCoupon" class="form-control">
+      </div>
+      <button class="btn btn-primary btn-block btn-lg mt-3" onclick="payQR()">Buy QR Credit</button>
+    `;
+  }
+  
+  document.getElementById('upgradeBody').innerHTML = html;
+  document.getElementById('upgradeModal').classList.add('active');
+}
+
+async function paySubscription() {
+  const couponCode = document.getElementById('upgradeCoupon')?.value.trim();
+  const r = await apiCall('/payments/create-order', {
+    method: 'POST',
+    body: JSON.stringify({ type: 'subscription', couponCode })
+  });
+  if (!r.success) return showAlert(r.message, 'danger');
+  openRazorpay(r.orderId, r.amount, r.razorpayKeyId, r.user, async () => {
+    await refreshUser();
+    document.getElementById('upgradeModal').classList.remove('active');
+    showAlert('🎉 Subscription activated!', 'success');
+    renderView('overview');
+  });
+}
+
+async function payQR() {
+  const couponCode = document.getElementById('upgradeCoupon')?.value.trim();
+  const r = await apiCall('/payments/create-order', {
+    method: 'POST',
+    body: JSON.stringify({ type: 'qr', couponCode })
+  });
+  if (!r.success) return showAlert(r.message, 'danger');
+  openRazorpay(r.orderId, r.amount, r.razorpayKeyId, r.user, async () => {
+    await refreshUser();
+    document.getElementById('upgradeModal').classList.remove('active');
+    showAlert('🎉 QR credit added!', 'success');
+    renderView('create');
+  });
+}
+
+function trialBannerHTML() {
+  if (currentUser.hasSubscription) return '';
+  if (currentUser.hasTrial) {
+    const t = currentUser.trial;
+    return `
+      <div class="trial-banner">
+        <div class="info">
+          🎁 <strong>Free Trial Active</strong> — ${t.daysLeft} day${t.daysLeft !== 1 ? 's' : ''} left •
+          Submissions: <strong>${t.submissionsUsed}/${t.submissionLimit}</strong> •
+          QRs: <strong>${t.qrUsed}/${t.qrLimit}</strong>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="showUpgradeModal()">Upgrade Now</button>
+      </div>
+    `;
+  }
+  return `
+    <div class="alert alert-danger">
+      ⚠️ <strong>Your trial has ended.</strong> Subscribe to continue accessing your data.
+      <button class="btn btn-primary btn-sm" style="margin-left:12px;" onclick="showUpgradeModal()">Subscribe Now</button>
+    </div>
+  `;
+}
+
+async function renderView(view) {
+  document.querySelectorAll('.nav-link').forEach(a => a.classList.toggle('active', a.dataset.view === view));
+  await refreshUser();
+  const c = document.getElementById('content');
+  
+  if (view === 'overview') {
+    const forms = await apiCall('/forms');
+    const totalSubs = (forms.forms || []).reduce((sum, f) => sum + f.submissionCount, 0);
+    
+    c.innerHTML = `
+      <h2 style="margin-bottom:20px;">Welcome back, ${currentUser.name}! 👋</h2>
+      ${trialBannerHTML()}
+      <div class="grid grid-4">
+        <div class="stat-card"><div class="label">Total Forms</div><div class="value">${forms.count || 0}</div></div>
+        <div class="stat-card"><div class="label">Submissions</div><div class="value">${totalSubs}</div></div>
+        <div class="stat-card"><div class="label">QR Credits</div><div class="value">${currentUser.qrCreditsAvailable}</div></div>
+        <div class="stat-card"><div class="label">Status</div><div class="value" style="font-size:16px;">${currentUser.hasSubscription ? '✅ Pro' : (currentUser.hasTrial ? '🎁 Trial' : '❌ Expired')}</div></div>
+      </div>
+      <div class="card mt-3">
+        <h3 class="card-title">Quick Actions</h3>
+        <div class="flex gap-2" style="flex-wrap:wrap;">
+          <button class="btn btn-primary" onclick="renderView('create')">➕ Create New Form</button>
+          <button class="btn btn-outline" onclick="renderView('forms')">📝 View My Forms</button>
+          <button class="btn btn-outline" onclick="renderView('billing')">💳 Billing</button>
+        </div>
+      </div>
+    `;
+  }
+  
+  else if (view === 'forms') {
+    const r = await apiCall('/forms');
+    const forms = r.forms || [];
+    c.innerHTML = `
+      ${trialBannerHTML()}
+      <div class="flex-between mb-3">
+        <h2>My Forms</h2>
+        <button class="btn btn-primary" onclick="renderView('create')">➕ New Form</button>
+      </div>
+      ${forms.length === 0 ? `
+        <div class="empty-state card">
+          <h3>No forms yet</h3>
+          <p>Create your first form and start collecting responses.</p>
+          <button class="btn btn-primary mt-3" onclick="renderView('create')">Create Form</button>
+        </div>
+      ` : `
+        <div class="grid grid-2">
+          ${forms.map(f => `
+            <div class="card">
+              <div class="flex-between mb-2">
+                <h3 style="font-size:18px;">${f.name}</h3>
+                <span class="badge ${f.isActive ? 'badge-success' : 'badge-danger'}">${f.isActive ? 'Active' : 'Inactive'}</span>
+              </div>
+              ${f.eventName ? `<div style="font-size:13px; color:var(--primary); font-weight:600; margin-bottom:6px;">🎯 ${f.eventName}</div>` : ''}
+              <p style="color:var(--gray-600); font-size:13px; margin-bottom:12px;">${f.description || 'No description'}</p>
+              <div style="font-size:13px; color:var(--gray-500); margin-bottom:12px;">
+                📋 ${f.fieldsCount} fields • 📨 ${f.submissionCount} submissions
+                ${f.createdViaTrial ? ' • <span class="badge badge-trial" style="font-size:10px;">TRIAL</span>' : ''}
+              </div>
+              <div class="flex gap-2" style="flex-wrap:wrap;">
+                <button class="btn btn-sm btn-primary" onclick="viewSubmissions('${f.id}', '${f.name.replace(/'/g, "\\'")}')">View Data</button>
+                <button class="btn btn-sm btn-outline" onclick="showQR('${f.id}', '${f.qrCode}', '${f.publicUrl}')">Show QR</button>
+                <button class="btn btn-sm btn-success" onclick="downloadExcel('${f.id}')">📥</button>
+                <button class="btn btn-sm btn-danger" onclick="deleteForm('${f.id}')">🗑️</button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `}
+    `;
+  }
+  
+  else if (view === 'create') {
+    if (!currentUser.canAccess) {
+      c.innerHTML = `${trialBannerHTML()}<div class="card text-center" style="padding:40px;"><h3>Your access has ended</h3><p>Please subscribe to continue.</p><button class="btn btn-primary mt-3" onclick="showUpgradeModal()">Subscribe Now</button></div>`;
+      return;
+    }
+    const qrCheck = (currentUser.hasSubscription && currentUser.qrCreditsAvailable > 0) ? { allowed: true, source: 'paid' } :
+                    (currentUser.hasTrial && currentUser.trial.qrUsed < currentUser.trial.qrLimit) ? { allowed: true, source: 'trial' } : 
+                    { allowed: false };
+    
+    if (!qrCheck.allowed) {
+      c.innerHTML = `${trialBannerHTML()}<div class="card text-center" style="padding:40px;"><h3>🎟️ QR Limit Reached</h3><p>You need a new QR credit to create another form.</p><button class="btn btn-primary mt-3" onclick="showUpgradeModal()">Get QR Credit</button></div>`;
+      return;
+    }
+    
+    c.innerHTML = `
+      ${trialBannerHTML()}
+      <h2 class="mb-3">Create New Form</h2>
+      <div class="alert ${qrCheck.source === 'trial' ? 'alert-warning' : 'alert-info'}">
+        ${qrCheck.source === 'trial' ? '🎁 This will use your FREE trial QR (1 allowed).' : `💡 You have <strong>${currentUser.qrCreditsAvailable}</strong> paid QR credits.`}
+      </div>
+      
+      <div class="card">
+        <h3 style="margin-bottom:12px;">Form Details</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Form Name *</label>
+            <input type="text" id="formName" class="form-control" placeholder="e.g., Customer Feedback">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Event/Campaign Name (optional)</label>
+            <input type="text" id="eventName" class="form-control" placeholder="e.g., Diwali Sale 2026">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea id="formDesc" class="form-control" placeholder="Shown above the form to users"></textarea>
+        </div>
+      </div>
+      
+      <div class="card">
+        <h3 style="margin-bottom:12px;">🎨 Your Branding (shown on the form)</h3>
+        <p class="text-sm text-muted mb-3">Add your company details. These will appear on the form so customers know it's from you.</p>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Company Name</label>
+            <input type="text" id="bCompanyName" class="form-control" value="${currentUser.companyName || ''}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Contact Number</label>
+            <input type="tel" id="bContact" class="form-control" value="${currentUser.mobile || ''}">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Contact Email</label>
+            <input type="email" id="bEmail" class="form-control" value="${currentUser.email || ''}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Website</label>
+            <input type="url" id="bWebsite" class="form-control" placeholder="https://yoursite.com">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Address</label>
+          <input type="text" id="bAddress" class="form-control">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Brand Color</label>
+            <input type="color" id="bColor" class="form-control" value="#4f46e5" style="height:42px;">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Logo (optional, max 500KB)</label>
+            <input type="file" id="bLogo" class="form-control" accept="image/*">
+          </div>
+        </div>
+      </div>
+      
+      <div class="card">
+        <h3 style="margin-bottom:12px;">Form Fields</h3>
+        <p class="text-sm text-muted mb-3">These are the questions your customers will fill out.</p>
+        <div id="fieldsList"></div>
+        <button class="btn btn-outline" onclick="addField()">➕ Add Field</button>
+        
+        <div class="mt-3">
+          <button class="btn btn-primary btn-lg" onclick="saveForm()">✨ Create Form & Generate QR</button>
+        </div>
+      </div>
+    `;
+    addField();
+  }
+  
+  else if (view === 'billing') {
+    const history = await apiCall('/payments/history');
+    c.innerHTML = `
+      ${trialBannerHTML()}
+      <h2 class="mb-3">Billing & Subscription</h2>
+      <div class="grid grid-2 mb-3">
+        <div class="card">
+          <h3 class="card-title">Subscription Status</h3>
+          ${currentUser.hasSubscription ? `
+            <div class="badge badge-success" style="font-size:14px; padding:6px 14px;">✅ Pro Active</div>
+            <p style="margin-top:12px;">Valid till: <strong>${formatDate(currentUser.subscriptionEndDate)}</strong></p>
+          ` : currentUser.hasTrial ? `
+            <div class="badge badge-trial" style="font-size:14px; padding:6px 14px;">🎁 Free Trial</div>
+            <p style="margin-top:12px;">${currentUser.trial.daysLeft} days remaining</p>
+            <p class="text-sm text-muted">Submissions: ${currentUser.trial.submissionsUsed}/${currentUser.trial.submissionLimit}</p>
+            <div style="background:var(--gray-50); padding:16px; border-radius:var(--radius-sm); margin-top:16px;">
+              <div style="font-size:24px; font-weight:800; color:var(--primary);">₹${pricing.subscriptionPrice}/year</div>
+              <button class="btn btn-primary btn-block mt-3" onclick="showUpgradeModal()">Upgrade to Pro</button>
+            </div>
+          ` : `
+            <div class="badge badge-danger" style="font-size:14px; padding:6px 14px;">❌ Expired</div>
+            <p style="margin-top:12px; color:var(--gray-600);">Activate Pro to access your data</p>
+            <div style="background:var(--gray-50); padding:16px; border-radius:var(--radius-sm); margin-top:16px;">
+              <div style="font-size:28px; font-weight:800; color:var(--primary);">₹${pricing.subscriptionPrice}/year</div>
+              <button class="btn btn-primary btn-block mt-3" onclick="showUpgradeModal()">Subscribe Now</button>
+            </div>
+          `}
+        </div>
+        <div class="card">
+          <h3 class="card-title">QR Credits</h3>
+          <div style="font-size:36px; font-weight:800; color:var(--primary);">${currentUser.qrCreditsAvailable}</div>
+          <p style="color:var(--gray-600); margin-bottom:16px;">credits • ${currentUser.totalQrPurchased} purchased</p>
+          <div style="background:var(--gray-50); padding:16px; border-radius:var(--radius-sm);">
+            <div style="font-size:18px; font-weight:600;">Buy 1 QR: ₹${pricing.qrPrice}</div>
+            <button class="btn btn-primary btn-block mt-3" onclick="showUpgradeModal()">Buy QR Credit</button>
+          </div>
+        </div>
+      </div>
+      
+      <div class="card">
+        <h3 class="card-title">Payment History</h3>
+        ${!history.payments || history.payments.length === 0 ? '<p class="text-muted">No payments yet</p>' : `
+          <div class="table-responsive">
+            <table class="table">
+              <thead><tr><th>Date</th><th>Type</th><th>Amount</th><th>Status</th></tr></thead>
+              <tbody>
+                ${history.payments.map(p => `
+                  <tr>
+                    <td>${formatDate(p.createdAt)}</td>
+                    <td><span class="badge badge-info">${p.type}</span></td>
+                    <td>${formatINR(p.finalAmount)} ${p.discountAmount ? `<small style="color:var(--success);">-${formatINR(p.discountAmount)}</small>` : ''}</td>
+                    <td><span class="badge badge-success">Paid</span></td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `}
+      </div>
+    `;
+  }
+  
+  else if (view === 'profile') {
+    c.innerHTML = `
+      <h2 class="mb-3">My Profile</h2>
+      <div class="card">
+        <div class="grid grid-2">
+          <div><strong>Name:</strong> ${currentUser.name}</div>
+          <div><strong>Email:</strong> ${currentUser.email}</div>
+          <div><strong>Mobile:</strong> ${currentUser.mobile || '-'}</div>
+          <div><strong>Company:</strong> ${currentUser.companyName || '-'}</div>
+          <div><strong>Status:</strong> ${currentUser.isActive ? '✅ Active' : '❌ Deactivated'}</div>
+          <div><strong>Joined:</strong> ${formatDate(currentUser.createdAt)}</div>
+        </div>
+      </div>
+    `;
+  }
+}
+
+// ============ FORM BUILDER ============
+let fieldCounter = 0;
+function addField() {
+  fieldCounter++;
+  const fId = `field_${Date.now()}_${fieldCounter}`;
+  const html = `
+    <div class="field-builder-row" id="${fId}">
+      <input type="text" placeholder="Field Label (e.g., Full Name)" class="field-label">
+      <select class="field-type" onchange="toggleOptions('${fId}')">
+        <option value="text">Text</option>
+        <option value="email">Email</option>
+        <option value="tel">Phone</option>
+        <option value="number">Number</option>
+        <option value="textarea">Long Text</option>
+        <option value="date">Date</option>
+        <option value="select">Dropdown</option>
+        <option value="radio">Radio</option>
+        <option value="checkbox">Checkbox</option>
+      </select>
+      <label style="font-size:12px; display:flex; align-items:center; gap:4px;"><input type="checkbox" class="field-required"> Req</label>
+      <button class="btn btn-sm btn-danger" onclick="this.parentElement.remove()">✕</button>
+      <div class="field-options" style="grid-column: 1 / -1; display:none;">
+        <input type="text" placeholder="Options (comma separated)" class="form-control" style="margin-top:8px;">
+      </div>
+    </div>
+  `;
+  document.getElementById('fieldsList').insertAdjacentHTML('beforeend', html);
+}
+
+function toggleOptions(fId) {
+  const row = document.getElementById(fId);
+  const type = row.querySelector('.field-type').value;
+  const opts = row.querySelector('.field-options');
+  opts.style.display = ['select', 'radio', 'checkbox'].includes(type) ? 'block' : 'none';
+}
+
+async function saveForm() {
+  const name = document.getElementById('formName').value.trim();
+  const eventName = document.getElementById('eventName').value.trim();
+  const description = document.getElementById('formDesc').value.trim();
+  if (!name) return showAlert('Please enter form name', 'danger');
+  
+  // Branding
+  const branding = {
+    companyName: document.getElementById('bCompanyName').value.trim(),
+    contactNumber: document.getElementById('bContact').value.trim(),
+    contactEmail: document.getElementById('bEmail').value.trim(),
+    website: document.getElementById('bWebsite').value.trim(),
+    address: document.getElementById('bAddress').value.trim(),
+    primaryColor: document.getElementById('bColor').value
+  };
+  
+  // Logo (read as base64)
+  const logoFile = document.getElementById('bLogo').files[0];
+  if (logoFile) {
+    if (logoFile.size > 500 * 1024) return showAlert('Logo too large (max 500KB)', 'danger');
+    branding.logoUrl = await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.readAsDataURL(logoFile);
+    });
+  }
+  
+  // Fields
+  const rows = document.querySelectorAll('.field-builder-row');
+  const fields = [];
+  for (const row of rows) {
+    const label = row.querySelector('.field-label').value.trim();
+    const type = row.querySelector('.field-type').value;
+    const required = row.querySelector('.field-required').checked;
+    const optsInput = row.querySelector('.field-options input');
+    if (!label) return showAlert('All fields need a label', 'danger');
+    
+    const field = {
+      fieldId: 'f_' + label.toLowerCase().replace(/[^a-z0-9]/g, '_') + '_' + Date.now() + Math.random().toString(36).slice(2,5),
+      label, type, required
+    };
+    if (['select', 'radio', 'checkbox'].includes(type)) {
+      field.options = optsInput.value.split(',').map(s => s.trim()).filter(Boolean);
+      if (field.options.length === 0) return showAlert(`Add options for "${label}"`, 'danger');
+    }
+    fields.push(field);
+  }
+  if (fields.length === 0) return showAlert('Add at least one field', 'danger');
+  
+  showAlert('Creating your form...', 'info');
+  const r = await apiCall('/forms', { 
+    method: 'POST', 
+    body: JSON.stringify({ name, eventName, description, fields, branding })
+  });
+  if (r.success) {
+    showAlert('🎉 Form created!', 'success');
+    showQR(r.form.id, r.form.qrCode, r.form.publicUrl);
+    await refreshUser();
+  } else {
+    if (r.code === 'NO_ACCESS' || r.code === 'TRIAL_QR_LIMIT' || r.code === 'NO_QR_CREDITS') {
+      showUpgradeModal(r.message);
+    } else {
+      showAlert(r.message, 'danger');
+    }
+  }
+}
+
+function showQR(formId, qrCode, publicUrl) {
+  document.getElementById('content').innerHTML = `
+    <div class="card text-center">
+      <h2>Your QR Code is Ready! 🎉</h2>
+      <p style="color:var(--gray-600); margin: 12px 0;">Print or share. Anyone who scans it can fill your form.</p>
+      <div class="qr-display">
+        <img src="${qrCode}" alt="QR Code">
+      </div>
+      <div style="margin: 16px 0;">
+        <strong>Form URL:</strong><br>
+        <a href="${publicUrl}" target="_blank" style="word-break:break-all; color:var(--primary);">${publicUrl}</a>
+      </div>
+      <div class="flex gap-2" style="justify-content:center; flex-wrap:wrap;">
+        <a href="${qrCode}" download="qr-code.png" class="btn btn-primary">⬇️ Download QR</a>
+        <button class="btn btn-outline" onclick="navigator.clipboard.writeText('${publicUrl}'); showAlert('Link copied!', 'success');">📋 Copy Link</button>
+        <a href="${publicUrl}" target="_blank" class="btn btn-outline">👁️ Preview</a>
+        <button class="btn btn-outline" onclick="renderView('forms')">📝 All Forms</button>
+      </div>
+    </div>
+  `;
+}
+
+async function viewSubmissions(formId, formName) {
+  const r = await apiCall(`/forms/${formId}/submissions`);
+  if (!r.success) {
+    if (r.code === 'NO_ACCESS') return showUpgradeModal(r.message);
+    return showAlert(r.message, 'danger');
+  }
+  const fields = r.form.fields;
+  const subs = r.submissions;
+  
+  document.getElementById('content').innerHTML = `
+    ${trialBannerHTML()}
+    <div class="flex-between mb-3">
+      <h2>${formName}</h2>
+      <div class="flex gap-2">
+        <button class="btn btn-success" onclick="downloadExcel('${formId}')">📥 Download Excel</button>
+        <button class="btn btn-outline" onclick="renderView('forms')">← Back</button>
+      </div>
+    </div>
+    <p style="color:var(--gray-600); margin-bottom:16px;">Total: <strong>${subs.length}</strong> submissions</p>
+    ${subs.length === 0 ? '<div class="empty-state card"><h3>No submissions yet</h3><p>Share your QR to start collecting responses.</p></div>' : `
+      <div class="card" style="padding:0; overflow:hidden;">
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>#</th><th>Submitted</th>
+                ${fields.map(f => `<th>${f.label}</th>`).join('')}
+              </tr>
+            </thead>
+            <tbody>
+              ${subs.map((s, i) => `
+                <tr>
+                  <td>${i + 1}</td>
+                  <td>${formatDate(s.submittedAt)}</td>
+                  ${fields.map(f => {
+                    const v = s.data[f.fieldId];
+                    return `<td>${Array.isArray(v) ? v.join(', ') : (v || '-')}</td>`;
+                  }).join('')}
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `}
+  `;
+}
+
+async function downloadExcel(formId) {
+  const token = getToken();
+  try {
+    const res = await fetch(`/api/forms/${formId}/download`, { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) {
+      const err = await res.json();
+      if (err.code === 'NO_ACCESS') return showUpgradeModal(err.message);
+      return showAlert(err.message, 'danger');
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = res.headers.get('content-disposition')?.match(/filename="(.+)"/)?.[1] || 'data.xlsx';
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch (e) {
+    showAlert('Download failed', 'danger');
+  }
+}
+
+async function deleteForm(id) {
+  if (!confirm('Delete this form and all submissions?')) return;
+  const r = await apiCall(`/forms/${id}`, { method: 'DELETE' });
+  if (r.success) { showAlert('Form deleted', 'success'); renderView('forms'); }
+  else showAlert(r.message, 'danger');
+}
+
+document.querySelectorAll('.nav-link').forEach(a => {
+  a.addEventListener('click', (e) => { e.preventDefault(); renderView(a.dataset.view); });
+});
+
+(async () => {
+  await loadInitData();
+  await refreshUser();
+  if (!currentUser.isActive) {
+    document.getElementById('content').innerHTML = `
+      <div class="alert alert-danger">
+        <h3>Account Deactivated</h3>
+        <p>Your account has been deactivated by admin. Please contact support at ${siteSettings.supportEmail}.</p>
+      </div>
+    `;
+    return;
+  }
+  renderView('overview');
+})();
+</script>
+
+</body>
+</html>

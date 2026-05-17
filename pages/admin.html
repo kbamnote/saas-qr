@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Super Admin - QRForms</title>
+<link rel="stylesheet" href="/css/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+.navbar { background: var(--gray-900); color: white; }
+.navbar-brand { color: white !important; -webkit-text-fill-color: white !important; background: none !important; }
+.navbar-nav a, .navbar-nav span { color: white; }
+.admin-badge { background: var(--danger); color: white; padding: 3px 10px; border-radius: 100px; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; }
+.sidebar a { color: var(--gray-700); }
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="/admin" class="navbar-brand">⚡ Super Admin</a>
+  <button class="mobile-menu-btn" style="color:white;" onclick="document.querySelector('.navbar-nav').classList.toggle('open')">☰</button>
+  <div class="navbar-nav">
+    <span id="userName"></span>
+    <span class="admin-badge">ADMIN</span>
+    <a href="#" onclick="logout(); return false;">Logout</a>
+  </div>
+</nav>
+
+<div class="app-layout">
+  <aside class="sidebar">
+    <a href="#" class="nav-link active" data-view="overview">📊 Overview</a>
+    <a href="#" class="nav-link" data-view="users">👥 Users</a>
+    <a href="#" class="nav-link" data-view="branding">🎨 Site Branding</a>
+    <a href="#" class="nav-link" data-view="pricing">💰 Pricing & Trial</a>
+    <a href="#" class="nav-link" data-view="coupons">🎟️ Coupons</a>
+    <a href="#" class="nav-link" data-view="legal">📜 Legal Info</a>
+  </aside>
+  
+  <main class="main-content">
+    <div id="alertBox"></div>
+    <div id="content"></div>
+  </main>
+</div>
+
+<div class="modal-backdrop" id="modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title" id="modalTitle"></h3>
+      <button class="modal-close" onclick="document.getElementById('modal').classList.remove('active')">×</button>
+    </div>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<script src="/js/common.js"></script>
+<script>
+let currentUser = requireAuth(true);
+document.getElementById('userName').textContent = currentUser.name;
+
+async function renderView(view) {
+  document.querySelectorAll('.nav-link').forEach(a => a.classList.toggle('active', a.dataset.view === view));
+  const c = document.getElementById('content');
+  
+  if (view === 'overview') {
+    const r = await apiCall('/admin/stats');
+    const s = r.stats || {};
+    const subRev = (s.revenue || []).find(x => x._id === 'subscription') || {};
+    const qrRev = (s.revenue || []).find(x => x._id === 'qr') || {};
+    
+    c.innerHTML = `
+      <h2 class="mb-3">Admin Overview</h2>
+      <div class="grid grid-4">
+        <div class="stat-card"><div class="label">Total Users</div><div class="value">${s.totalUsers || 0}</div></div>
+        <div class="stat-card" style="border-left-color:var(--success);"><div class="label">Active Users</div><div class="value">${s.activeUsers || 0}</div></div>
+        <div class="stat-card" style="border-left-color:var(--warning);"><div class="label">Trial Users</div><div class="value">${s.trialUsers || 0}</div></div>
+        <div class="stat-card" style="border-left-color:var(--primary);"><div class="label">Paid Subscribers</div><div class="value">${s.activeSubscriptions || 0}</div></div>
+      </div>
+      <div class="grid grid-2 mt-3">
+        <div class="stat-card"><div class="label">Total Forms</div><div class="value">${s.totalForms || 0}</div></div>
+        <div class="stat-card"><div class="label">Total Submissions</div><div class="value">${s.totalSubmissions || 0}</div></div>
+      </div>
+      <div class="card mt-3" style="border-left: 4px solid var(--success);">
+        <h3 class="card-title">💰 Total Revenue</h3>
+        <div style="font-size:40px; font-weight:800; color:var(--success);">${formatINR((subRev.total || 0) + (qrRev.total || 0))}</div>
+        <div style="font-size:14px; color:var(--gray-500); margin-top:8px;">
+          Subscriptions: ${formatINR(subRev.total || 0)} (${subRev.count || 0} payments) •
+          QR Sales: ${formatINR(qrRev.total || 0)} (${qrRev.count || 0} payments)
+        </div>
+      </div>
+    `;
+  }
+  
+  else if (view === 'users') {
+    const r = await apiCall('/admin/users');
+    const users = r.users || [];
+    c.innerHTML = `
+      <h2 class="mb-3">All Users (${users.length})</h2>
+      <div class="card" style="padding:0; overflow:hidden;">
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr><th>Name</th><th>Contact</th><th>Company</th><th>Status</th><th>Forms</th><th>QR</th><th>Active</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+              ${users.map(u => `
+                <tr>
+                  <td>${u.name}<br><small style="color:var(--gray-500);">${u.email}</small></td>
+                  <td>${u.mobile || '-'}<br><small style="color:var(--gray-500);">${u.city || ''}</small></td>
+                  <td>${u.companyName || '-'}</td>
+                  <td>
+                    ${u.hasSubscription ? '<span class="badge badge-success">Pro</span>' : 
+                      u.hasTrial ? `<span class="badge badge-trial">Trial</span><br><small>${u.trialSubmissionsUsed}/${u.trialSubmissionLimit}</small>` : 
+                      '<span class="badge badge-danger">Expired</span>'}
+                  </td>
+                  <td>${u.formCount}</td>
+                  <td>${u.qrCreditsAvailable}</td>
+                  <td><span class="badge ${u.isActive ? 'badge-success' : 'badge-danger'}">${u.isActive ? 'ON' : 'OFF'}</span></td>
+                  <td>
+                    <button class="btn btn-sm btn-outline" onclick="viewUser('${u.id}')">View</button>
+                    <button class="btn btn-sm ${u.isActive ? 'btn-warning' : 'btn-success'}" onclick="toggleUser('${u.id}')">${u.isActive ? '🔒' : '🔓'}</button>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }
+  
+  else if (view === 'branding') {
+    const r = await apiCall('/admin/settings');
+    const s = r.settings;
+    c.innerHTML = `
+      <h2 class="mb-3">Site Branding</h2>
+      <p class="text-muted mb-3">Customize your platform's appearance. These will appear on the landing page, login page, and as "Powered by" on every customer form.</p>
+      
+      <div class="card">
+        <h3 style="margin-bottom:16px;">🏷️ Brand Identity</h3>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Site Name</label>
+            <input type="text" id="siteName" class="form-control" value="${s.siteName || ''}" placeholder="e.g., QRForms">
+            <small class="text-muted">Shown in navbar, footer, and on customer forms</small>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Tagline</label>
+            <input type="text" id="siteTagline" class="form-control" value="${s.siteTagline || ''}" placeholder="Build Forms. Generate QR.">
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Site Logo (max 500KB)</label>
+          ${s.siteLogoUrl ? `<div style="margin-bottom:8px;"><img src="${s.siteLogoUrl}" style="max-height:60px; border:1px solid var(--gray-200); border-radius:8px; padding:6px; background:white;"></div>` : ''}
+          <input type="file" id="siteLogo" class="form-control" accept="image/*">
+          <small class="text-muted">Shown in navbar and on every customer form (powered by). PNG/SVG recommended.</small>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Website URL (used in Powered By link)</label>
+            <input type="url" id="websiteUrl" class="form-control" value="${s.websiteUrl || ''}" placeholder="https://yoursite.com">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Support Email</label>
+            <input type="email" id="supportEmail" class="form-control" value="${s.supportEmail || ''}">
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Support Phone (optional)</label>
+          <input type="tel" id="supportPhone" class="form-control" value="${s.supportPhone || ''}">
+        </div>
+        
+        <button class="btn btn-primary btn-lg" onclick="saveBranding()">💾 Save Branding</button>
+      </div>
+    `;
+  }
+  
+  else if (view === 'pricing') {
+    const r = await apiCall('/admin/settings');
+    const s = r.settings;
+    c.innerHTML = `
+      <h2 class="mb-3">Pricing & Trial Settings</h2>
+      
+      <div class="card">
+        <h3 style="margin-bottom:16px;">💰 Pricing</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Yearly Subscription Price (₹)</label>
+            <input type="number" id="subPrice" class="form-control" value="${s.subscriptionPrice}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Per QR Code Price (₹)</label>
+            <input type="number" id="qrPrice" class="form-control" value="${s.qrPrice}">
+          </div>
+        </div>
+      </div>
+      
+      <div class="card">
+        <h3 style="margin-bottom:16px;">🎁 Trial Settings</h3>
+        <p class="text-muted mb-3">Configure what new users get during their free trial.</p>
+        <div class="grid grid-3">
+          <div class="form-group">
+            <label class="form-label">Trial Duration (Days)</label>
+            <input type="number" id="trialDays" class="form-control" value="${s.trialDays || 7}" min="1">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Submission Limit</label>
+            <input type="number" id="trialSubmissions" class="form-control" value="${s.trialSubmissions || 10}" min="1">
+          </div>
+          <div class="form-group">
+            <label class="form-label">QR Limit</label>
+            <input type="number" id="trialQrLimit" class="form-control" value="${s.trialQrLimit || 1}" min="1">
+          </div>
+        </div>
+      </div>
+      
+      <button class="btn btn-primary btn-lg" onclick="savePricing()">💾 Save Pricing & Trial</button>
+    `;
+  }
+  
+  else if (view === 'coupons') {
+    const r = await apiCall('/admin/coupons');
+    const coupons = r.coupons || [];
+    c.innerHTML = `
+      <div class="flex-between mb-3">
+        <h2>Coupons (${coupons.length})</h2>
+        <button class="btn btn-primary" onclick="showAddCoupon()">➕ Add Coupon</button>
+      </div>
+      ${coupons.length === 0 ? '<div class="empty-state card"><h3>No coupons yet</h3></div>' : `
+        <div class="card" style="padding:0; overflow:hidden;">
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr><th>Code</th><th>Discount</th><th>For</th><th>Uses</th><th>Min ₹</th><th>Expires</th><th>Status</th><th>Actions</th></tr>
+              </thead>
+              <tbody>
+                ${coupons.map(c => `
+                  <tr>
+                    <td><strong>${c.code}</strong><br><small style="color:var(--gray-500);">${c.description || ''}</small></td>
+                    <td>${c.discountType === 'percentage' ? c.discountValue + '%' : '₹' + c.discountValue}</td>
+                    <td><span class="badge badge-info">${c.appliesTo}</span></td>
+                    <td>${c.usedCount}/${c.maxUses || '∞'}</td>
+                    <td>₹${c.minAmount}</td>
+                    <td>${c.expiresAt ? new Date(c.expiresAt).toLocaleDateString() : 'No expiry'}</td>
+                    <td><span class="badge ${c.isActive ? 'badge-success' : 'badge-danger'}">${c.isActive ? 'Active' : 'Inactive'}</span></td>
+                    <td>
+                      <button class="btn btn-sm ${c.isActive ? 'btn-warning' : 'btn-success'}" onclick="toggleCoupon('${c._id}')">${c.isActive ? '🔒' : '🔓'}</button>
+                      <button class="btn btn-sm btn-danger" onclick="deleteCoupon('${c._id}')">🗑️</button>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `}
+    `;
+  }
+  
+  else if (view === 'legal') {
+    const r = await apiCall('/admin/settings');
+    const s = r.settings;
+    c.innerHTML = `
+      <h2 class="mb-3">Legal Information</h2>
+      <p class="text-muted mb-3">This info is shown on Terms, Privacy, About, and Contact pages.</p>
+      
+      <div class="card">
+        <div class="form-group">
+          <label class="form-label">Company Legal Name</label>
+          <input type="text" id="companyLegalName" class="form-control" value="${s.companyLegalName || ''}" placeholder="e.g., QRForms Pvt Ltd">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Company Address</label>
+          <textarea id="companyAddress" class="form-control">${s.companyAddress || ''}</textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">GST Number (optional)</label>
+          <input type="text" id="gstNumber" class="form-control" value="${s.gstNumber || ''}">
+        </div>
+        <button class="btn btn-primary btn-lg" onclick="saveLegal()">💾 Save Legal Info</button>
+      </div>
+    `;
+  }
+}
+
+async function saveBranding() {
+  const body = {
+    siteName: document.getElementById('siteName').value,
+    siteTagline: document.getElementById('siteTagline').value,
+    websiteUrl: document.getElementById('websiteUrl').value,
+    supportEmail: document.getElementById('supportEmail').value,
+    supportPhone: document.getElementById('supportPhone').value
+  };
+  
+  const logoFile = document.getElementById('siteLogo').files[0];
+  if (logoFile) {
+    if (logoFile.size > 500 * 1024) return showAlert('Logo too large (max 500KB)', 'danger');
+    body.siteLogoUrl = await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.readAsDataURL(logoFile);
+    });
+  }
+  
+  const r = await apiCall('/admin/settings', { method: 'PUT', body: JSON.stringify(body) });
+  showAlert(r.message || 'Saved', r.success ? 'success' : 'danger');
+}
+
+async function savePricing() {
+  const body = {
+    subscriptionPrice: parseInt(document.getElementById('subPrice').value),
+    qrPrice: parseInt(document.getElementById('qrPrice').value),
+    trialDays: parseInt(document.getElementById('trialDays').value),
+    trialSubmissions: parseInt(document.getElementById('trialSubmissions').value),
+    trialQrLimit: parseInt(document.getElementById('trialQrLimit').value)
+  };
+  const r = await apiCall('/admin/settings', { method: 'PUT', body: JSON.stringify(body) });
+  showAlert(r.message || 'Saved', r.success ? 'success' : 'danger');
+}
+
+async function saveLegal() {
+  const body = {
+    companyLegalName: document.getElementById('companyLegalName').value,
+    companyAddress: document.getElementById('companyAddress').value,
+    gstNumber: document.getElementById('gstNumber').value
+  };
+  const r = await apiCall('/admin/settings', { method: 'PUT', body: JSON.stringify(body) });
+  showAlert(r.message || 'Saved', r.success ? 'success' : 'danger');
+}
+
+async function viewUser(id) {
+  const r = await apiCall(`/admin/users/${id}`);
+  if (!r.success) return showAlert(r.message, 'danger');
+  const u = r.user;
+  document.getElementById('modalTitle').textContent = `${u.name}`;
+  document.getElementById('modalBody').innerHTML = `
+    <div class="grid grid-2 mb-3" style="font-size:14px;">
+      <div><strong>Email:</strong> ${u.email}</div>
+      <div><strong>Mobile:</strong> ${u.mobile || '-'}</div>
+      <div><strong>Company:</strong> ${u.companyName || '-'}</div>
+      <div><strong>Website:</strong> ${u.website || '-'}</div>
+      <div><strong>City:</strong> ${u.city || '-'}</div>
+      <div><strong>State:</strong> ${u.state || '-'}</div>
+      <div><strong>DOB:</strong> ${u.dateOfBirth ? new Date(u.dateOfBirth).toLocaleDateString() : '-'}</div>
+      <div><strong>Size:</strong> ${u.companySize || '-'}</div>
+      <div style="grid-column:1/-1;"><strong>Use:</strong> ${u.intendedUse || '-'}</div>
+      <div style="grid-column:1/-1;"><strong>Address:</strong> ${u.address || '-'}</div>
+      <div><strong>QR Credits:</strong> ${u.qrCreditsAvailable}</div>
+      <div><strong>Joined:</strong> ${formatDate(u.createdAt)}</div>
+    </div>
+    <div class="alert alert-info" style="font-size:11px; word-break:break-all;">
+      <strong>Password Hash:</strong><br>${u.passwordHash}
+    </div>
+    <h4 style="margin:12px 0;">Forms (${r.forms.length})</h4>
+    ${r.forms.length === 0 ? '<p class="text-muted">No forms</p>' : r.forms.map(f => `
+      <div style="padding:8px 10px; background:var(--gray-50); border-radius:6px; margin-bottom:6px; font-size:13px;">
+        <strong>${f.name}</strong>${f.eventName ? ` (${f.eventName})` : ''} • ${f.submissionCount} subs
+        ${f.createdViaTrial ? ' <span class="badge badge-trial" style="font-size:9px;">TRIAL</span>' : ''}
+        <button class="btn btn-sm btn-outline" style="float:right;" onclick="viewFormSubs('${f.id}', '${f.name.replace(/'/g, "\\'")}')">View</button>
+      </div>
+    `).join('')}
+    
+    <h4 style="margin:12px 0;">Admin Actions</h4>
+    <div class="flex gap-2" style="flex-wrap:wrap;">
+      <button class="btn btn-sm btn-success" onclick="grantSubscription('${u._id}')">+12 month sub</button>
+      <button class="btn btn-sm btn-primary" onclick="grantQR('${u._id}')">+1 QR credit</button>
+      <button class="btn btn-sm btn-warning" onclick="extendTrial('${u._id}')">Extend trial</button>
+      <button class="btn btn-sm btn-outline" onclick="resetPassword('${u._id}')">Reset password</button>
+    </div>
+  `;
+  document.getElementById('modal').classList.add('active');
+}
+
+async function viewFormSubs(formId, formName) {
+  const r = await apiCall(`/admin/forms/${formId}/submissions`);
+  if (!r.success) return showAlert(r.message, 'danger');
+  document.getElementById('modalTitle').textContent = `${formName} (${r.submissions.length})`;
+  document.getElementById('modalBody').innerHTML = r.submissions.length === 0 ? '<p>No submissions</p>' : `
+    <div class="table-responsive">
+      <table class="table" style="font-size:13px;">
+        <thead><tr><th>Time</th>${r.form.fields.map(f => `<th>${f.label}</th>`).join('')}</tr></thead>
+        <tbody>
+          ${r.submissions.map(s => `<tr>
+            <td>${formatDate(s.submittedAt)}</td>
+            ${r.form.fields.map(f => `<td>${Array.isArray(s.data[f.fieldId]) ? s.data[f.fieldId].join(', ') : (s.data[f.fieldId] || '-')}</td>`).join('')}
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+async function toggleUser(id) {
+  if (!confirm('Toggle this user account?')) return;
+  const r = await apiCall(`/admin/users/${id}/toggle-active`, { method: 'PATCH' });
+  showAlert(r.message, r.success ? 'success' : 'danger');
+  if (r.success) renderView('users');
+}
+
+async function grantSubscription(id) {
+  const months = parseInt(prompt('How many months?', '12'));
+  if (!months) return;
+  const r = await apiCall(`/admin/users/${id}/grant-subscription`, { method: 'POST', body: JSON.stringify({ months }) });
+  showAlert(r.message, r.success ? 'success' : 'danger');
+  if (r.success) document.getElementById('modal').classList.remove('active');
+}
+
+async function grantQR(id) {
+  const credits = parseInt(prompt('How many QR credits?', '1'));
+  if (!credits) return;
+  const r = await apiCall(`/admin/users/${id}/grant-qr`, { method: 'POST', body: JSON.stringify({ credits }) });
+  showAlert(r.message, r.success ? 'success' : 'danger');
+}
+
+async function extendTrial(id) {
+  const days = parseInt(prompt('Extend trial by how many days?', '7'));
+  if (!days) return;
+  const submissions = parseInt(prompt('Add how many more trial submissions?', '10')) || 0;
+  const r = await apiCall(`/admin/users/${id}/extend-trial`, { method: 'POST', body: JSON.stringify({ days, submissions }) });
+  showAlert(r.message, r.success ? 'success' : 'danger');
+}
+
+async function resetPassword(id) {
+  const newPassword = prompt('New password (min 6 chars):');
+  if (!newPassword || newPassword.length < 6) return;
+  const r = await apiCall(`/admin/users/${id}/reset-password`, { method: 'POST', body: JSON.stringify({ newPassword }) });
+  showAlert(r.message, r.success ? 'success' : 'danger');
+}
+
+function showAddCoupon() {
+  document.getElementById('modalTitle').textContent = 'Add New Coupon';
+  document.getElementById('modalBody').innerHTML = `
+    <div class="form-group"><label class="form-label">Code</label><input type="text" id="cCode" class="form-control" placeholder="WELCOME50"></div>
+    <div class="form-group"><label class="form-label">Description</label><input type="text" id="cDesc" class="form-control"></div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Type</label>
+        <select id="cType" class="form-control"><option value="percentage">Percentage %</option><option value="fixed">Fixed ₹</option></select>
+      </div>
+      <div class="form-group"><label class="form-label">Value</label><input type="number" id="cValue" class="form-control"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Applies To</label>
+        <select id="cApplies" class="form-control">
+          <option value="both">Both</option>
+          <option value="subscription">Subscription only</option>
+          <option value="qr">QR only</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Max Uses (0=∞)</label><input type="number" id="cMax" class="form-control" value="0"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Min Amount ₹</label><input type="number" id="cMin" class="form-control" value="0"></div>
+      <div class="form-group"><label class="form-label">Expires</label><input type="date" id="cExpiry" class="form-control"></div>
+    </div>
+    <button class="btn btn-primary btn-block" onclick="createCoupon()">Create</button>
+  `;
+  document.getElementById('modal').classList.add('active');
+}
+
+async function createCoupon() {
+  const body = {
+    code: document.getElementById('cCode').value.trim(),
+    description: document.getElementById('cDesc').value.trim(),
+    discountType: document.getElementById('cType').value,
+    discountValue: parseInt(document.getElementById('cValue').value),
+    appliesTo: document.getElementById('cApplies').value,
+    maxUses: parseInt(document.getElementById('cMax').value) || 0,
+    minAmount: parseInt(document.getElementById('cMin').value) || 0,
+    expiresAt: document.getElementById('cExpiry').value || null
+  };
+  if (!body.code || !body.discountValue) return alert('Code and value required');
+  const r = await apiCall('/admin/coupons', { method: 'POST', body: JSON.stringify(body) });
+  if (r.success) {
+    document.getElementById('modal').classList.remove('active');
+    showAlert('Coupon created', 'success');
+    renderView('coupons');
+  } else showAlert(r.message, 'danger');
+}
+
+async function toggleCoupon(id) {
+  const r = await apiCall(`/admin/coupons/${id}/toggle`, { method: 'PATCH' });
+  if (r.success) renderView('coupons');
+}
+
+async function deleteCoupon(id) {
+  if (!confirm('Delete this coupon?')) return;
+  const r = await apiCall(`/admin/coupons/${id}`, { method: 'DELETE' });
+  if (r.success) renderView('coupons');
+}
+
+document.querySelectorAll('.nav-link').forEach(a => {
+  a.addEventListener('click', (e) => { e.preventDefault(); renderView(a.dataset.view); });
+});
+
+renderView('overview');
+</script>
+
+</body>
+</html>

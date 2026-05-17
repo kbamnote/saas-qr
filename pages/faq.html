@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FAQ - QRForms</title>
+<link rel="stylesheet" href="/css/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<nav class="navbar landing-nav">
+  <a href="/" class="navbar-brand">📋 <span id="brandName">QRForms</span></a>
+  <div class="navbar-nav">
+    <a href="/">Home</a>
+    <a href="/about">About</a>
+    <a href="/contact">Contact</a>
+    <a href="/login" class="btn btn-ghost btn-sm">Login</a>
+    <a href="/trial-signup" class="btn btn-primary btn-sm">Start Free Trial</a>
+  </div>
+</nav>
+
+<div class="container-sm">
+  <div class="text-center mb-4" style="padding: 40px 0 20px;">
+    <h1 style="font-size: 40px; font-weight: 800; margin-bottom: 12px;">Frequently Asked Questions</h1>
+    <p style="color:var(--gray-600); font-size:17px;">Everything you need to know about our platform.</p>
+  </div>
+  
+  <h3 style="margin: 32px 0 16px; color:var(--gray-800);">Getting Started</h3>
+  
+  <div class="faq-item">
+    <div class="faq-question" onclick="this.parentElement.classList.toggle('open')">
+      What is this platform and how does it work?
+      <span class="arrow">▾</span>
+    </div>
+    <div class="faq-answer">
+      <p>Our platform lets you create custom forms, generate a unique QR code for each form, and collect customer responses automatically. Customers scan the QR with their phone camera, fill out the form on a web page, and the data appears in your dashboard. You can download all submissions as an Excel file anytime.</p>
+    </div>
+  </div>
+  
+  <div class="faq-item">
+    <div class="faq-question" onclick="this.parentElement.classList.toggle('open')">
+      Do I need to install any software?
+      <span class="arrow">▾</span>
+    </div>
+    <div class="faq-answer">
+      <p>No. Everything works in your web browser. There's nothing to download or install. Customers also don't need to install anything — they just scan the QR code with their phone's camera.</p>
+    </div>
+  </div>
+  
+  <div class="faq-item">
+    <div class="faq-question" onclick="this.parentElement.classList.toggle('open')">
+      How long does it take to set up?
+      <span class="arrow">▾</span>
+    </div>
+    <div class="faq-answer">
+      <p>About 5 minutes. Sign up → create your form → add your branding → generate QR. You can have a working QR code in under 5 minutes.</p>
+    </div>
+  </div>
+  
+  <h3 style="margin: 32px 0 16px; color:var(--gray-800);">Free Trial</h3>
+  
+  <div class="faq-item">
+    <div class="faq-question" onclick="this.parentElement.classList.toggle('open')">
+      What's included in the free trial?
+      <span class="arrow">▾</span>
+    </div>
+    <div class="faq-answer">
+      <p>The free trial gives you 7 days of access to the platform, where you can:</p>
+      <ul>
+        <li>Create 1 QR-coded form</li>
+        <li>Collect up to 10 submissions</li>
+        <li>View all submissions in your dashboard</li>
+        <li>Download data as Excel</li>
+      </ul>
+      <p>The trial ends after 7 days OR after 10 submissions are collected — whichever comes first. No credit card is required to start.</p>
+    </div>
+  </div>
+  
+  <div class="faq-item">
+    <div class="faq-question" onclick="this.parentElement.classList.toggle('open')">
+      What happens when my trial ends?
+      <span class="arrow">▾</span>
+    </div>
+    <div class="faq-answer">
+      <p>You can still log in to your account, but you won't be able to view your data, download Excel files, or create new forms until you subscribe. Your data remains safe in our system — you simply need to subscribe to access it again.</p>
+    </div>
+  </div>
+  
+  <div class="faq-item">
+    <div class="faq-question" onclick="this.parentElement.classList.toggle('open')">
+      Can I extend my free trial?
+      <span class="arrow">▾</span>
+    </div>
+    <div class="faq-answer">
+      <p>Trial extensions are not standard, but you may contact support to request one in special cases. Otherwise, subscribing to the Pro plan gives you full access immediately.</p>
+    </div>
+  </div>
+  
+  <h3 style="margin: 32px 0 16px; color:var(--gray-800);">Pricing & Payments</h3>
+  
+  <div class="faq-item">
+    <div class="faq-question" onclick="this.parentElement.classList.toggle('open')">
+      How much does it cost?
+      <span class="arrow">▾</span>
+    </div>
+    <div class="faq-answer">
+      <p>We have two charges:</p>
+      <ul>
+        <li><strong>Yearly Subscription (<span id="pSub">₹499</span>/year):</strong> Required to access your dashboard, view submissions, and download Excel data.</li>
+        <li><strong>Per QR Code (<span id="pQr">₹399</span>):</strong> Each new QR code costs this amount. A QR code never expires and collects unlimited responses for life.</li>
+      </ul>
+      <p>So if you want one form, you'd pay ₹499 (subscription) + ₹399 (QR) for the first year. The next year, you only pay ₹499 to renew dashboard access — your existing QRs continue to work.</p>
+    </div>
+  </div>
+  
+  <div class="faq-item">
+    <div class="faq-question" onclick="this.parentElement.classList.toggle('open')">
+      What payment methods do you accept?
+      <span class="arrow">▾</span>
+    </div>
+    <div class="faq-answer">
+      <p>We use <strong>Razorpay</strong> as our payment gateway, which accepts: Credit Cards, Debit Cards, UPI (Google Pay, PhonePe, Paytm), Net Banking, and Wallets. All transactions are secure and PCI-DSS compliant.</p>
+    </div>
+  </div>
+  
+  <div class="faq-item">
+    <div class="faq-question" onclick="this.parentElement.classList.toggle('open')">
+      Is GST included in the price?
+      <span class="arrow">▾</span>
+    </div>
+    <div class="faq-answer">
+      <p>The displayed prices are inclusive of all applicable taxes including GST as per Indian tax laws.</p>
+    </div>
+  </div>
+  
+  <div class="faq-item">
+    <div class="faq-question" onclick="this.parentElement.classList.toggle('open')">
+      Do you offer refunds?
+      <span class="arrow">▾</span>
+    </div>
+    <div class="faq-answer">
+      <p>Yes, we have a transparent refund policy. Please see our <a href="/refund">Refund Policy</a> page for full details on eligibility and process.</p>
+    </div>
+  </div>
+  
+  <div class="faq-item">
+    <div class="faq-question" onclick="this.parentElement.classList.toggle('open')">
+      Can I use a discount/coupon code?
+      <span class="arrow">▾</span>
+    </div>
+    <div class="faq-answer">
+      <p>Yes. If you have a valid coupon code, enter it during checkout. You'll see the discount applied before payment.</p>
+    </div>
+  </div>
+  
+  <h3 style="margin: 32px 0 16px; color:var(--gray-800);">Using the Platform</h3>
+  
+  <div class="faq-item">
+    <div class="faq-question" onclick="this.parentElement.classList.toggle('open')">
+      Can I create multiple QR codes for different events?
+      <span class="arrow">▾</span>
+    </div>
+    <div class="faq-answer">
+      <p>Yes! Each form gets its own unique QR code. You can name your forms after events, campaigns, or branches (e.g., "Diwali Sale 2026", "Mumbai Branch", "Customer Feedback"). Each event QR collects data separately so you can track which event got the most responses.</p>
+    </div>
+  </div>
+  
+  <div class="faq-item">
+    <div class="faq-question" onclick="this.parentElement.classList.toggle('open')">
+      Can I add my company branding to the forms?
+      <span class="arrow">▾</span>
+    </div>
+    <div class="faq-answer">
+      <p>Absolutely. When creating a form, you can add your company logo, company name, contact number, email, address, website, and choose a brand color. All of this will appear at the top of the form when customers scan the QR.</p>
+    </div>
+  </div>
+  
+  <div class="faq-item">
+    <div class="faq-question" onclick="this.parentElement.classList.toggle('open')">
+      Is there a limit on submissions per form?
+      <span class="arrow">▾</span>
+    </div>
+    <div class="faq-answer">
+      <p>For paid subscribers, there's no limit. Each QR code can collect unlimited submissions for life. Trial users are limited to 10 submissions in total.</p>
+    </div>
+  </div>
+  
+  <div class="faq-item">
+    <div class="faq-question" onclick="this.parentElement.classList.toggle('open')">
+      Will my QR code stop working if I don't renew?
+      <span class="arrow">▾</span>
+    </div>
+    <div class="faq-answer">
+      <p>Your QR code will keep redirecting to your form, but customers may see a "form unavailable" message if your subscription is expired. To keep collecting data, you should renew your subscription.</p>
+    </div>
+  </div>
+  
+  <h3 style="margin: 32px 0 16px; color:var(--gray-800);">Data & Privacy</h3>
+  
+  <div class="faq-item">
+    <div class="faq-question" onclick="this.parentElement.classList.toggle('open')">
+      Where is my data stored?
+      <span class="arrow">▾</span>
+    </div>
+    <div class="faq-answer">
+      <p>All data is stored securely in encrypted cloud databases. Please see our <a href="/privacy">Privacy Policy</a> for details.</p>
+    </div>
+  </div>
+  
+  <div class="faq-item">
+    <div class="faq-question" onclick="this.parentElement.classList.toggle('open')">
+      Who owns the data I collect?
+      <span class="arrow">▾</span>
+    </div>
+    <div class="faq-answer">
+      <p>You do. Any data collected through your forms belongs to you. We act only as a service provider that stores and presents the data on your behalf. You can download or delete your data at any time.</p>
+    </div>
+  </div>
+  
+  <div class="faq-item">
+    <div class="faq-question" onclick="this.parentElement.classList.toggle('open')">
+      Can I delete my account and all data?
+      <span class="arrow">▾</span>
+    </div>
+    <div class="faq-answer">
+      <p>Yes, you can request account deletion by emailing us at <span id="supportEmail">support@qrforms.com</span>. We'll permanently delete your account and all associated data within 7 business days.</p>
+    </div>
+  </div>
+  
+  <h3 style="margin: 32px 0 16px; color:var(--gray-800);">Technical Support</h3>
+  
+  <div class="faq-item">
+    <div class="faq-question" onclick="this.parentElement.classList.toggle('open')">
+      How do I contact support?
+      <span class="arrow">▾</span>
+    </div>
+    <div class="faq-answer">
+      <p>Email us at <strong id="supportEmail2">support@qrforms.com</strong>. We respond to all queries within 24-48 hours on working days.</p>
+    </div>
+  </div>
+  
+  <div class="faq-item">
+    <div class="faq-question" onclick="this.parentElement.classList.toggle('open')">
+      My QR code doesn't scan. What should I do?
+      <span class="arrow">▾</span>
+    </div>
+    <div class="faq-answer">
+      <p>Make sure the QR is printed clearly and large enough (minimum 2cm × 2cm). Check that your phone camera has good lighting and is steady. If issues continue, try the direct form URL provided in your dashboard.</p>
+    </div>
+  </div>
+  
+  <div class="faq-item">
+    <div class="faq-question" onclick="this.parentElement.classList.toggle('open')">
+      Can I edit a form after creating it?
+      <span class="arrow">▾</span>
+    </div>
+    <div class="faq-answer">
+      <p>Yes, you can edit fields, branding, and other details from your dashboard. The QR code stays the same — it always points to the latest version of your form.</p>
+    </div>
+  </div>
+  
+  <div style="text-align: center; margin: 60px 0; padding: 40px; background: var(--primary-50); border-radius: var(--radius-lg);">
+    <h3 style="margin-bottom: 12px;">Still have questions?</h3>
+    <p style="color:var(--gray-600); margin-bottom:20px;">Reach out to us — we're here to help.</p>
+    <a href="/contact" class="btn btn-primary btn-lg">Contact Us</a>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="footer-content">
+    <div>
+      <div class="logo-text">📋 <span id="footerBrand">QRForms</span></div>
+      <p>Build forms, generate QR codes, collect customer data effortlessly.</p>
+    </div>
+    <div>
+      <h4>Product</h4>
+      <ul>
+        <li><a href="/#features">Features</a></li>
+        <li><a href="/#pricing">Pricing</a></li>
+        <li><a href="/trial-signup">Free Trial</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Company</h4>
+      <ul>
+        <li><a href="/about">About</a></li>
+        <li><a href="/contact">Contact</a></li>
+        <li><a href="/faq">FAQ</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Legal</h4>
+      <ul>
+        <li><a href="/terms">Terms</a></li>
+        <li><a href="/privacy">Privacy</a></li>
+        <li><a href="/refund">Refund</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>© <span id="copyYear"></span> <span id="footerLegal">QRForms</span>. All rights reserved.</p>
+  </div>
+</footer>
+
+<script>
+document.getElementById('copyYear').textContent = new Date().getFullYear();
+fetch('/api/settings/public').then(r => r.json()).then(d => {
+  if (d.success) {
+    const s = d.settings;
+    document.getElementById('brandName').textContent = s.siteName;
+    document.getElementById('footerBrand').textContent = s.siteName;
+    document.getElementById('footerLegal').textContent = s.companyLegalName || s.siteName;
+    document.getElementById('supportEmail').textContent = s.supportEmail;
+    document.getElementById('supportEmail2').textContent = s.supportEmail;
+    document.getElementById('pSub').textContent = '₹' + s.subscriptionPrice;
+    document.getElementById('pQr').textContent = '₹' + s.qrPrice;
+  }
+}).catch(() => {});
+</script>
+
+</body>
+</html>
