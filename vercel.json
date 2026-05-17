@@ -1,17 +1,17 @@
 {
-  "cleanUrls": true,
-  "rewrites": [
-    { "source": "/trial-signup", "destination": "/pages/trial-signup.html" },
-    { "source": "/login",        "destination": "/pages/login.html" },
-    { "source": "/register",     "destination": "/pages/trial-signup.html" },
-    { "source": "/dashboard",    "destination": "/pages/dashboard.html" },
-    { "source": "/admin",        "destination": "/pages/admin.html" },
-    { "source": "/faq",          "destination": "/pages/faq.html" },
-    { "source": "/about",        "destination": "/pages/about.html" },
-    { "source": "/terms",        "destination": "/pages/terms.html" },
-    { "source": "/privacy",      "destination": "/pages/privacy.html" },
-    { "source": "/refund",       "destination": "/pages/refund.html" },
-    { "source": "/contact",      "destination": "/pages/contact.html" },
-    { "source": "/form/:path*",  "destination": "/pages/public-form.html" }
+  "routes": [
+    { "src": "/faq",          "dest": "/pages/faq.html" },
+    { "src": "/about",        "dest": "/pages/about.html" },
+    { "src": "/login",        "dest": "/pages/login.html" },
+    { "src": "/trial-signup", "dest": "/pages/trial-signup.html" },
+    { "src": "/register",     "dest": "/pages/trial-signup.html" },
+    { "src": "/dashboard",    "dest": "/pages/dashboard.html" },
+    { "src": "/admin",        "dest": "/pages/admin.html" },
+    { "src": "/terms",        "dest": "/pages/terms.html" },
+    { "src": "/privacy",      "dest": "/pages/privacy.html" },
+    { "src": "/refund",       "dest": "/pages/refund.html" },
+    { "src": "/contact",      "dest": "/pages/contact.html" },
+    { "src": "/form/(.*)",    "dest": "/pages/public-form.html" },
+    { "src": "/(.*)",         "dest": "/$1" }
   ]
 }
